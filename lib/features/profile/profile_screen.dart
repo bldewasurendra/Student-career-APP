@@ -18,43 +18,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'lenminibhagya@gmail.com',
   ];
 
-  bool _isStudentView = false; // Toggle for Admin to see as Student
+  bool _isStudentView = false;
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isActuallyAdmin = user != null && adminEmails.contains(user.email);
-    
-    // Show Admin features only if user is Admin AND not in Student View
     final showAdminFeatures = isActuallyAdmin && !_isStudentView;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("Profile"),
+        title: const Text("My Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           if (isActuallyAdmin)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                children: [
-                  const Text("Student View", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  Switch(
-                    value: _isStudentView,
-                    onChanged: (value) {
-                      setState(() {
-                        _isStudentView = value;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(_isStudentView ? "Switched to Student View" : "Switched to Admin View"),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                    activeColor: AppColors.primary,
-                  ),
-                ],
-              ),
+            Row(
+              children: [
+                const Text("Student View", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                Switch(
+                  value: _isStudentView,
+                  activeColor: AppColors.primary,
+                  onChanged: (v) => setState(() => _isStudentView = v),
+                ),
+              ],
             ),
         ],
       ),
@@ -62,62 +50,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Text(
-                user?.email?[0].toUpperCase() ?? "S",
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
+            // Profile Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
+              ),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    child: Text(
+                      user?.email?[0].toUpperCase() ?? "U",
+                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    showAdminFeatures ? "System Administrator" : "Future Graduate",
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    user?.email ?? "Not logged in",
+                    style: const TextStyle(color: Colors.white54, fontSize: 14),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 15),
-            Text(
-              showAdminFeatures ? "Administrator" : "Future Graduate",
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            
+            const SizedBox(height: 25),
+            
+            // Activity Stats
+            Row(
+              children: [
+                _buildStatCard("Saved", "12", Icons.bookmark_outline),
+                const SizedBox(width: 15),
+                _buildStatCard("Applied", "05", Icons.send_outlined),
+                const SizedBox(width: 15),
+                _buildStatCard("Points", "250", Icons.star_outline),
+              ],
             ),
-            Text(
-              user?.email ?? "student@unipath.edu",
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
+
             const SizedBox(height: 30),
             
+            // Main Options
+            _buildSectionTitle("Account Settings"),
             if (showAdminFeatures)
-              _buildProfileItem(
+              _buildOption(
                 context,
                 Icons.admin_panel_settings_outlined,
                 "Admin Dashboard",
-                Colors.amber,
-                () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AdminDashboard()),
-                  );
-                },
+                subtitle: "Manage jobs, programs & notifications",
+                color: Colors.amber,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminDashboard())),
               ),
-              
-            _buildProfileItem(
-              context,
-              Icons.bookmark_outline,
-              "Saved Guides",
-              AppColors.primary,
-              () {},
-            ),
-            _buildProfileItem(
-              context,
-              Icons.history,
-              "Watch History",
-              AppColors.primary,
-              () {},
-            ),
-            _buildProfileItem(
-              context,
-              Icons.help_outline,
-              "Help & Support",
-              AppColors.primary,
-              () {},
-            ),
+            
+            _buildOption(context, Icons.person_outline, "Personal Information", subtitle: "Update your details"),
+            _buildOption(context, Icons.security_outlined, "Security", subtitle: "Change password & 2FA"),
             
             const SizedBox(height: 20),
+            _buildSectionTitle("General"),
+            _buildOption(context, Icons.help_outline, "Help & Support"),
+            _buildOption(context, Icons.info_outline, "About UniPath"),
+            
+            const SizedBox(height: 30),
+            
+            // Logout
             CustomCard(
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
@@ -127,28 +129,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Icon(Icons.logout, color: AppColors.error),
                   SizedBox(width: 10),
-                  Text("Logout", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                  Text("Logout Account", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileItem(BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
+  Widget _buildStatCard(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 20),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(label, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 5, bottom: 15),
+        child: Text(title, style: const TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+      ),
+    );
+  }
+
+  Widget _buildOption(BuildContext context, IconData icon, String title, {String? subtitle, Color? color, VoidCallback? onTap}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: 12),
       child: CustomCard(
-        onTap: onTap,
+        onTap: onTap ?? () {},
         child: Row(
           children: [
-            Icon(icon, size: 22, color: color),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (color ?? AppColors.primary).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color ?? AppColors.primary, size: 22),
+            ),
             const SizedBox(width: 15),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            const Spacer(),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  if (subtitle != null) Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white24, size: 20),
           ],
         ),
       ),
