@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_colors.dart';
 import '../../models/models.dart';
 import '../../services/firebase_service.dart';
@@ -15,7 +16,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final FirebaseService _firebaseService = FirebaseService();
 
   String _selectedCategory = 'Jobs';
-  final List<String> _categories = ['Jobs', 'Internships', 'Masters', 'Study Abroad'];
+  final List<String> _categories = ['Jobs', 'Internships', 'Masters', 'Study Abroad', 'Internship Guidance'];
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _companyOrUniController = TextEditingController();
@@ -33,6 +34,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
     setState(() => _isLoading = true);
 
     try {
+      final categoryKey = _selectedCategory.toLowerCase().replaceAll(' ', '_');
+      
       if (_selectedCategory == 'Jobs' || _selectedCategory == 'Internships') {
         final job = JobModel(
           id: '',
@@ -45,11 +48,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           postedDate: 'Just now',
           description: _descriptionController.text,
         );
-        await _firebaseService.addJob(job, _selectedCategory.toLowerCase());
-        await _firebaseService.addNotification(
-          "New $_selectedCategory Added!",
-          "${job.title} is now available at ${job.company}.",
-        );
+        await _firebaseService.addJob(job, categoryKey);
+        await _firebaseService.addNotification("New $_selectedCategory!", "${job.title} at ${job.company}.");
       } else {
         final program = ProgramModel(
           id: '',
@@ -62,11 +62,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
           requirements: _requirementsController.text,
           description: _descriptionController.text,
         );
-        await _firebaseService.addProgram(program, _selectedCategory.toLowerCase().replaceAll(' ', '_'));
-        await _firebaseService.addNotification(
-          "New $_selectedCategory Opportunity!",
-          "${program.title} at ${program.university} is now open for applications.",
-        );
+        await _firebaseService.addProgram(program, categoryKey);
+        await _firebaseService.addNotification("New $_selectedCategory!", "${program.title} is now available.");
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$_selectedCategory Added!')));
@@ -101,7 +98,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.add_circle_outline), text: "Add Content"),
-              Tab(icon: Icon(Icons.manage_accounts_outlined), text: "Manage Data"),
+              Tab(icon: Icon(Icons.manage_search), text: "Manage All"),
             ],
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
@@ -144,10 +141,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
             const SizedBox(height: 25),
             _buildField(_titleController, "Title"),
-            _buildField(_companyOrUniController, _selectedCategory.contains('Job') ? "Company" : "University"),
+            _buildField(_companyOrUniController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Company" : "University"),
             _buildField(_locationOrCountryController, "Location/Country"),
-            _buildField(_salaryOrCostController, _selectedCategory.contains('Job') ? "Salary" : "Cost"),
-            _buildField(_typeOrDurationController, _selectedCategory.contains('Job') ? "Type" : "Duration"),
+            _buildField(_salaryOrCostController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Salary" : "Cost"),
+            _buildField(_typeOrDurationController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Type" : "Duration"),
             _buildField(_imageUrlController, "Image URL (Optional)"),
             if (!_selectedCategory.contains('Job')) _buildField(_requirementsController, "Requirements", maxLines: 2),
             _buildField(_descriptionController, "Description", maxLines: 4),
@@ -169,35 +166,81 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildManageDataTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.analytics_outlined, size: 80, color: AppColors.primary),
-          const SizedBox(height: 20),
-          const Text("Live Management Console", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          const Text("Coming Soon: View & Delete functionality.", style: TextStyle(color: Colors.white70)),
-          const SizedBox(height: 30),
-          _buildStatRow("Jobs", "12"),
-          _buildStatRow("Masters", "8"),
-          _buildStatRow("Internships", "5"),
-        ],
-      ),
+    final categoryKey = _selectedCategory.toLowerCase().replaceAll(' ', '_');
+    
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(15),
+          child: Row(
+            children: [
+              const Text("Managing:", style: TextStyle(color: Colors.white70)),
+              const SizedBox(width: 10),
+              DropdownButton<String>(
+                value: _selectedCategory,
+                dropdownColor: AppColors.surface,
+                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (v) => setState(() => _selectedCategory = v!),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection(categoryKey).orderBy('timestamp', descending: true).snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Center(child: Text("No items found", style: TextStyle(color: Colors.white38)));
+
+              return ListView.builder(
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  final doc = snapshot.data!.docs[index];
+                  final data = doc.data() as Map<String, dynamic>;
+                  
+                  return Card(
+                    color: AppColors.surface,
+                    margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                    child: ListTile(
+                      title: Text(data['title'] ?? 'No Title', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      subtitle: Text(data['company'] ?? data['university'] ?? '', style: const TextStyle(color: Colors.white70)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            onPressed: () => _confirmDelete(categoryKey, doc.id),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildStatRow(String label, String count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 16)),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-            child: Text(count, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+  void _confirmDelete(String collection, String id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text("Delete Item?", style: TextStyle(color: Colors.white)),
+        content: const Text("This action cannot be undone.", style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              await FirebaseFirestore.instance.collection(collection).doc(id).delete();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Deleted successfully")));
+            }, 
+            child: const Text("Delete", style: TextStyle(color: Colors.redAccent))
           ),
         ],
       ),

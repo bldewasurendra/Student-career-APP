@@ -141,4 +141,43 @@ class FirebaseService {
     }
     await batch.commit();
   }
+
+  // --- CRUD Operations for Admin ---
+
+  // Update Job
+  Future<void> updateJob(String collection, String id, JobModel job) async {
+    await _db.collection(collection).doc(id).update({
+      'title': job.title,
+      'company': job.company,
+      'location': job.location,
+      'salary': job.salary,
+      'logoUrl': job.logoUrl,
+      'type': job.type,
+      'description': job.description,
+    });
+  }
+
+  // Delete Job
+  Future<void> deleteJob(String collection, String id) async {
+    await _db.collection(collection).doc(id).delete();
+  }
+
+  // Update Program
+  Future<void> updateProgram(String collection, String id, ProgramModel program) async {
+    await _db.collection(collection).doc(id).update({
+      'title': program.title,
+      'university': program.university,
+      'country': program.country,
+      'imageUrl': program.imageUrl,
+      'duration': program.duration,
+      'cost': program.cost,
+      'requirements': program.requirements,
+      'description': program.description,
+    });
+  }
+
+  // Delete Program
+  Future<void> deleteProgram(String collection, String id) async {
+    await _db.collection(collection).doc(id).delete();
+  }
 }
