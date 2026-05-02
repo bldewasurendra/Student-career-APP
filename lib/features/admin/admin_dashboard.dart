@@ -46,6 +46,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           description: _descriptionController.text,
         );
         await _firebaseService.addJob(job, _selectedCategory.toLowerCase());
+        await _firebaseService.addNotification(
+          "New $_selectedCategory Added!",
+          "${job.title} is now available at ${job.company}.",
+        );
       } else {
         final program = ProgramModel(
           id: '',
@@ -59,6 +63,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           description: _descriptionController.text,
         );
         await _firebaseService.addProgram(program, _selectedCategory.toLowerCase().replaceAll(' ', '_'));
+        await _firebaseService.addNotification(
+          "New $_selectedCategory Opportunity!",
+          "${program.title} at ${program.university} is now open for applications.",
+        );
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$_selectedCategory Added!')));
