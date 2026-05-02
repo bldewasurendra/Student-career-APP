@@ -74,9 +74,9 @@ A modern, feature-rich career guidance application built with **Flutter** and **
 
 ## 👨‍💻 Author
 
-**[Your Name]**
-- LinkedIn: [Your LinkedIn Profile]
-- Portfolio: [Your Portfolio Link]
+**bldewasurendra**
+- GitHub: [bldewasurendra](https://github.com/bldewasurendra)
+- Project Link: [Student Career APP](https://github.com/bldewasurendra/Student-career-APP)
 
 ---
 
