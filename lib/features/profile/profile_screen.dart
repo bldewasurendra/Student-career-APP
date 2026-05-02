@@ -12,6 +12,7 @@ class ProfileScreen extends StatelessWidget {
   static const List<String> adminEmails = [
     'admin@unipath.com',
     'oktech@gmail.com',
+    'lenminibhagya@gmail.com',
   ];
 
   @override

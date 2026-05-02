@@ -1,23 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in/google_sign_in.dart' as g_sign;
 import '../models/models.dart';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // final g_sign.GoogleSignIn _googleSignIn = g_sign.GoogleSignIn(scopes: ['email']);
 
   // Auth stream
   Stream<User?> get user => _auth.authStateChanges();
 
-  // Google Sign In
+  // Google Sign In (Temporarily disabled for APK build)
   Future<UserCredential?> signInWithGoogle() async {
+    /* 
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final g_sign.GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final g_sign.GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -27,6 +28,8 @@ class FirebaseService {
     } catch (e) {
       rethrow;
     }
+    */
+    throw Exception("Google Sign-In is temporarily disabled in this build. Please use Email login.");
   }
 
   // Sign Up

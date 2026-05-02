@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
 import '../learning/video_learning_screen.dart';
-import 'cv_form_screen.dart';
+import '../cv_builder/cv_form_screen.dart';
 
 class CVGuideScreen extends StatelessWidget {
   const CVGuideScreen({super.key});
