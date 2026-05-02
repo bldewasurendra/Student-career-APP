@@ -180,4 +180,12 @@ class FirebaseService {
   Future<void> deleteProgram(String collection, String id) async {
     await _db.collection(collection).doc(id).delete();
   }
+
+  // Update Display Name
+  Future<void> updateDisplayName(String name) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.updateDisplayName(name);
+    }
+  }
 }

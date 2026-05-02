@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/custom_card.dart';
 import '../admin/admin_dashboard.dart';
+import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,6 +35,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
+          ),
           if (isActuallyAdmin)
             Row(
               children: [
@@ -70,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 15),
                   Text(
-                    showAdminFeatures ? "System Administrator" : "Future Graduate",
+                    user?.displayName ?? (showAdminFeatures ? "System Administrator" : "Future Graduate"),
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   const SizedBox(height: 5),
@@ -109,7 +115,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminDashboard())),
               ),
             
-            _buildOption(context, Icons.person_outline, "Personal Information", subtitle: "Update your details"),
+            _buildOption(
+              context, 
+              Icons.person_outline, 
+              "Personal Information", 
+              subtitle: "Update your name",
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen())),
+            ),
             _buildOption(context, Icons.security_outlined, "Security", subtitle: "Change password & 2FA"),
             
             const SizedBox(height: 20),
