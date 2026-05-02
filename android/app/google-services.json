@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "284917958060",
+    "project_id": "student-career-app-b8d0a",
+    "storage_bucket": "student-career-app-b8d0a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284917958060:android:4fa2ae7bbf81dac9dc2609",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjnLMQbyVvkGgCKyeZ18pvAt0gmaoPxAk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
