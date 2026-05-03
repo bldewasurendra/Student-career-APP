@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_colors.dart';
 import '../../models/models.dart';
 import '../../services/firebase_service.dart';
+import 'chat_reply_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,7 +19,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final FirebaseService _firebaseService = FirebaseService();
 
   String _selectedCategory = 'Jobs';
-  final List<String> _categories = ['Jobs', 'Internships', 'Masters', 'Study Abroad', 'Internship Guidance'];
+  final List<String> _categories = ['Jobs', 'Internships', 'Masters', 'Study Abroad', 'Internship Guidance', 'Learning Videos'];
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _companyOrUniController = TextEditingController();
@@ -28,12 +31,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final TextEditingController _descriptionController = TextEditingController();
 
   bool _isLoading = false;
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+      });
+    }
+  }
 
   void _submitData() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
     try {
+      String imageUrl = _imageUrlController.text;
+      
+      // Upload image if selected
+      if (_selectedImage != null) {
+        imageUrl = await _firebaseService.uploadProfileImage(_selectedImage!); // We can reuse the profile upload or create a specific one
+      }
+
       final categoryKey = _selectedCategory.toLowerCase().replaceAll(' ', '_');
       
       if (_selectedCategory == 'Jobs' || _selectedCategory == 'Internships') {
@@ -43,20 +64,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
           company: _companyOrUniController.text,
           location: _locationOrCountryController.text,
           salary: _salaryOrCostController.text,
-          logoUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text : 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=150&auto=format&fit=crop&q=60',
+          logoUrl: imageUrl.isNotEmpty ? imageUrl : 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=150&auto=format&fit=crop&q=60',
           type: _typeOrDurationController.text,
           postedDate: 'Just now',
           description: _descriptionController.text,
         );
         await _firebaseService.addJob(job, categoryKey);
         await _firebaseService.addNotification("New $_selectedCategory!", "${job.title} at ${job.company}.");
+      } else if (_selectedCategory == 'Learning Videos') {
+        await _firebaseService.addVideo(
+          _titleController.text,
+          _imageUrlController.text, // YouTube Video ID
+          _companyOrUniController.text, // Author
+          _typeOrDurationController.text, // Duration
+        );
+        await _firebaseService.addNotification("New Video!", "New learning resource: ${_titleController.text}");
       } else {
         final program = ProgramModel(
           id: '',
           title: _titleController.text,
           university: _companyOrUniController.text,
           country: _locationOrCountryController.text,
-          imageUrl: _imageUrlController.text.isNotEmpty ? _imageUrlController.text : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400&auto=format&fit=crop&q=60',
+          imageUrl: imageUrl.isNotEmpty ? imageUrl : 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400&auto=format&fit=crop&q=60',
           duration: _typeOrDurationController.text,
           cost: _salaryOrCostController.text,
           requirements: _requirementsController.text,
@@ -84,12 +113,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _typeOrDurationController.clear();
     _requirementsController.clear();
     _descriptionController.clear();
+    setState(() => _selectedImage = null);
   }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -99,6 +129,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             tabs: [
               Tab(icon: Icon(Icons.add_circle_outline), text: "Add Content"),
               Tab(icon: Icon(Icons.manage_search), text: "Manage All"),
+              Tab(icon: Icon(Icons.message_outlined), text: "Inbox"),
             ],
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
@@ -109,6 +140,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           children: [
             _buildAddContentTab(),
             _buildManageDataTab(),
+            _buildInboxTab(),
           ],
         ),
       ),
@@ -145,9 +177,40 @@ class _AdminDashboardState extends State<AdminDashboard> {
             _buildField(_locationOrCountryController, "Location/Country"),
             _buildField(_salaryOrCostController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Salary" : "Cost"),
             _buildField(_typeOrDurationController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Type" : "Duration"),
-            _buildField(_imageUrlController, "Image URL (Optional)"),
-            if (!_selectedCategory.contains('Job')) _buildField(_requirementsController, "Requirements", maxLines: 2),
-            _buildField(_descriptionController, "Description", maxLines: 4),
+            _buildField(_imageUrlController, _selectedCategory == 'Learning Videos' ? "YouTube Video ID" : "Image URL (Optional)", isRequired: _selectedCategory == 'Learning Videos'),
+            
+            if (_selectedCategory != 'Learning Videos') ...[
+              const Text("Or Select from Gallery", style: TextStyle(color: Colors.white70, fontSize: 14)),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: _selectedImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary, size: 40),
+                            SizedBox(height: 10),
+                            Text("Select Image", style: TextStyle(color: Colors.white54)),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+            if (!_selectedCategory.contains('Job') && _selectedCategory != 'Learning Videos') _buildField(_requirementsController, "Requirements", maxLines: 2),
+            if (_selectedCategory != 'Learning Videos') _buildField(_descriptionController, "Description", maxLines: 4),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -166,7 +229,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildManageDataTab() {
-    final categoryKey = _selectedCategory.toLowerCase().replaceAll(' ', '_');
+    String categoryKey = _selectedCategory.toLowerCase().replaceAll(' ', '_');
+    if (_selectedCategory == 'Learning Videos') categoryKey = 'videos';
     
     return Column(
       children: [
@@ -247,7 +311,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildField(TextEditingController controller, String label, {int maxLines = 1}) {
+  Widget _buildInboxTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('active_chats').orderBy('timestamp', descending: true).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (snapshot.data!.docs.isEmpty) return const Center(child: Text("No messages yet", style: TextStyle(color: Colors.white38)));
+
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            final doc = snapshot.data!.docs[index];
+            final data = doc.data() as Map<String, dynamic>;
+            final bool isUnread = data['unread'] ?? false;
+
+            return ListTile(
+              leading: const CircleAvatar(backgroundColor: AppColors.primary, child: Icon(Icons.person, color: Colors.white)),
+              title: Text(data['userName'] ?? 'User', style: TextStyle(color: Colors.white, fontWeight: isUnread ? FontWeight.bold : FontWeight.normal)),
+              subtitle: Text(data['lastMessage'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: isUnread ? Colors.white : Colors.white54)),
+              trailing: isUnread ? const CircleAvatar(radius: 5, backgroundColor: AppColors.primary) : null,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ChatReplyScreen(userId: doc.id, userName: data['userName'] ?? 'User'))),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildField(TextEditingController controller, String label, {int maxLines = 1, bool isRequired = true}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: TextFormField(
@@ -261,7 +352,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           fillColor: AppColors.surface,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
         ),
-        validator: (v) => v!.isEmpty ? "Required" : null,
+        validator: (v) {
+          if (isRequired && (v == null || v.isEmpty)) return "Required";
+          return null;
+        },
       ),
     );
   }

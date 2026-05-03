@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../core/app_colors.dart';
 import '../features/home/home_screen.dart';
 import '../features/learning/video_learning_screen.dart';
@@ -36,7 +35,7 @@ class _MainNavigationState extends State<MainNavigation> {
           borderRadius: BorderRadius.circular(30),
           child: NavigationBarTheme(
             data: NavigationBarThemeData(
-              indicatorColor: AppColors.primary.withOpacity(0.1),
+              indicatorColor: AppColors.primary.withValues(alpha: 0.1),
               labelTextStyle: WidgetStateProperty.all(
                 const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),

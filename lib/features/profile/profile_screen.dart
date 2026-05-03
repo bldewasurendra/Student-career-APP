@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/custom_card.dart';
 import '../admin/admin_dashboard.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
+import 'saved_screen.dart';
+import 'support_chat_screen.dart';
+import 'applied_jobs_screen.dart';
+import '../../services/firebase_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -62,17 +67,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    child: Text(
-                      user?.email?[0].toUpperCase() ?? "U",
-                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
-                    ),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
+                    child: user?.photoURL == null 
+                      ? Text(
+                          user?.email?[0].toUpperCase() ?? "U",
+                          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        )
+                      : null,
                   ),
                   const SizedBox(height: 15),
                   Text(
@@ -93,9 +101,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Activity Stats
             Row(
               children: [
-                _buildStatCard("Saved", "12", Icons.bookmark_outline),
+                _buildStatCard("Saved", "View", Icons.bookmark_outline, onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SavedScreen()));
+                }),
                 const SizedBox(width: 15),
-                _buildStatCard("Applied", "05", Icons.send_outlined),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseService().getAppliedJobs(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "00";
+                    return _buildStatCard("Applied", count, Icons.send_outlined, onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AppliedJobsScreen()));
+                    });
+                  }
+                ),
                 const SizedBox(width: 15),
                 _buildStatCard("Points", "250", Icons.star_outline),
               ],
@@ -122,11 +140,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: "Update your name",
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen())),
             ),
-            _buildOption(context, Icons.security_outlined, "Security", subtitle: "Change password & 2FA"),
+            _buildOption(
+              context, 
+              Icons.security_outlined, 
+              "Security", 
+              subtitle: "Change password & 2FA",
+              onTap: () => _showSecurityDialog(context),
+            ),
             
             const SizedBox(height: 20),
             _buildSectionTitle("General"),
-            _buildOption(context, Icons.help_outline, "Help & Support"),
+            _buildOption(
+              context, 
+              Icons.help_outline, 
+              "Help & Support",
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportChatScreen())),
+            ),
             _buildOption(context, Icons.info_outline, "About UniPath"),
             
             const SizedBox(height: 30),
@@ -152,22 +181,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon) {
+  Widget _buildStatCard(String label, String value, IconData icon, {VoidCallback? onTap}) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.primary, size: 20),
-            const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.white54)),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: AppColors.primary, size: 20),
+              const SizedBox(height: 8),
+              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(label, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+            ],
+          ),
         ),
       ),
     );
@@ -183,6 +215,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showSecurityDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text("Security Settings", style: TextStyle(color: Colors.white)),
+        content: const Text("Would you like to reset your password? We will send a reset link to your email.", style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null && user.email != null) {
+                await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password reset email sent!")));
+              }
+            }, 
+            child: const Text("Send Email", style: TextStyle(color: AppColors.primary))
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOption(BuildContext context, IconData icon, String title, {String? subtitle, Color? color, VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -193,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (color ?? AppColors.primary).withOpacity(0.1),
+                color: (color ?? AppColors.primary).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color ?? AppColors.primary, size: 22),

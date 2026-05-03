@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
-import 'widgets/main_navigation.dart';
+import 'core/theme_provider.dart';
+import 'package:provider/provider.dart';
 import 'features/splash/splash_screen.dart';
 
 void main() async {
@@ -18,7 +18,14 @@ void main() async {
     debugPrint("App will continue in offline/mock mode.");
   }
 
-  runApp(const UniPathApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: const UniPathApp(),
+    ),
+  );
 }
 
 class UniPathApp extends StatelessWidget {
@@ -26,10 +33,14 @@ class UniPathApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return MaterialApp(
       title: 'UniPath',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme, // You need to define this in AppTheme
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       home: const SplashScreen(),
     );
   }

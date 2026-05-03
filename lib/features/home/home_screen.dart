@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/custom_card.dart';
 import '../guides/guide_list_screen.dart';
@@ -7,9 +8,10 @@ import '../jobs/jobs_screen.dart';
 import '../study_abroad/programs_screen.dart';
 import '../masters/masters_screen.dart';
 import '../internships/internships_screen.dart';
-import '../cv_guide/cv_guide_screen.dart';
+import '../cv_builder/cv_form_screen.dart';
 import '../portfolio_guide/portfolio_guide_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../search/search_screen.dart';
 import '../../services/firebase_service.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -27,7 +29,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _buildHeader(context),
               const SizedBox(height: 30),
-              _buildSearchBar(),
+              _buildSearchBar(context),
               const SizedBox(height: 35),
               _buildSectionTitle("Explore Paths"),
               const SizedBox(height: 20),
@@ -56,7 +58,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Hi, Student!",
+                  "Hi, ${FirebaseAuth.instance.currentUser?.displayName ?? 'Student'}!",
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
@@ -90,7 +92,7 @@ class HomeScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
                 child: const Icon(Icons.notifications_outlined, size: 22, color: Colors.white),
               ),
@@ -126,21 +128,30 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: "Search for guidance...",
-          hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5)),
-          border: InputBorder.none,
-          icon: Icon(Icons.search, 
-            size: 18, color: AppColors.textSecondary),
+  Widget _buildSearchBar(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SearchScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+            const SizedBox(width: 10),
+            Text(
+              "Search for guidance...",
+              style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.5)),
+            ),
+          ],
         ),
       ),
     );
@@ -172,7 +183,7 @@ class HomeScreen extends StatelessWidget {
       {'title': 'Jobs', 'icon': Icons.business_center_outlined, 'color': Colors.green},
       {'title': 'Masters', 'icon': Icons.school_outlined, 'color': Colors.purple},
       {'title': 'Study Abroad', 'icon': Icons.public, 'color': Colors.orange},
-      {'title': 'CV Guide', 'icon': Icons.description_outlined, 'color': Colors.teal},
+      {'title': 'CV Builder', 'icon': Icons.history_edu, 'color': Colors.teal},
       {'title': 'Portfolio', 'icon': Icons.folder_shared_outlined, 'color': Colors.indigo},
     ];
 
@@ -211,10 +222,10 @@ class HomeScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (context) => const InternshipsScreen()),
               );
-            } else if (title == 'CV Guide') {
+            } else if (title == 'CV Builder') {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CVGuideScreen()),
+                MaterialPageRoute(builder: (context) => const CVFormScreen()),
               );
             } else if (title == 'Portfolio') {
               Navigator.push(
@@ -236,7 +247,7 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: (cat['color'] as Color).withOpacity(0.1),
+                  color: (cat['color'] as Color).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Icon(cat['icon'] as IconData, color: cat['color'] as Color),
@@ -279,7 +290,7 @@ class HomeScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
                 ),
               ),
               padding: const EdgeInsets.all(16),
@@ -298,7 +309,7 @@ class HomeScreen extends StatelessWidget {
                   Text(
                     "12:45",
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),

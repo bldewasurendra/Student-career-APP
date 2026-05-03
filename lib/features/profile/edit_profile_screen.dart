@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../core/app_colors.dart';
 import '../../services/firebase_service.dart';
 
@@ -14,6 +16,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
   final FirebaseService _firebaseService = FirebaseService();
   bool _isLoading = false;
+  File? _imageFile;
 
   @override
   void initState() {
@@ -21,10 +24,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController.text = FirebaseAuth.instance.currentUser?.displayName ?? "";
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
   void _saveProfile() async {
     setState(() => _isLoading = true);
     try {
+      // Update Name
       await _firebaseService.updateDisplayName(_nameController.text);
+      
+      // Update Image if selected
+      if (_imageFile != null) {
+        await _firebaseService.uploadProfileImage(_imageFile!);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile updated successfully!")));
         Navigator.pop(context);
@@ -40,6 +61,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -51,28 +74,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         padding: const EdgeInsets.all(25),
         child: Column(
           children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: const Icon(Icons.person, size: 60, color: AppColors.primary),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+            GestureDetector(
+              onTap: _pickImage,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundImage: _imageFile != null 
+                        ? FileImage(_imageFile!) 
+                        : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null) as ImageProvider?,
+                    child: (_imageFile == null && user?.photoURL == null) 
+                        ? const Icon(Icons.person, size: 60, color: AppColors.primary)
+                        : null,
                   ),
-                ),
-              ],
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 40),
             _buildTextField("Full Name", _nameController),
             const SizedBox(height: 20),
-            _buildDisabledField("Email Address", FirebaseAuth.instance.currentUser?.email ?? ""),
+            _buildDisabledField("Email Address", user?.email ?? ""),
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,

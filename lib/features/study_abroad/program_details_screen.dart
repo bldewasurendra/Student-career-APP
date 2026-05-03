@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/app_colors.dart';
 import '../../models/models.dart';
+import '../../services/firebase_service.dart';
 
 class ProgramDetailsScreen extends StatelessWidget {
   final ProgramModel program;
@@ -19,6 +20,31 @@ class ProgramDetailsScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: AppColors.surface,
             iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              StreamBuilder<bool>(
+                stream: FirebaseService().isBookmarked(program.id),
+                builder: (context, snapshot) {
+                  final isFav = snapshot.data ?? false;
+                  return IconButton(
+                    icon: Icon(isFav ? Icons.bookmark : Icons.bookmark_border, color: AppColors.primary),
+                    onPressed: () {
+                      FirebaseService().toggleBookmark(program.id, {
+                        'title': program.title,
+                        'university': program.university,
+                        'country': program.country,
+                        'imageUrl': program.imageUrl,
+                        'duration': program.duration,
+                        'cost': program.cost,
+                        'requirements': program.requirements,
+                        'description': program.description,
+                        'category': 'program',
+                      });
+                    },
+                  );
+                },
+              ),
+              const SizedBox(width: 10),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,

@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/app_colors.dart';
 import '../../models/models.dart';
+import '../../services/firebase_service.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final JobModel job;
@@ -17,6 +18,29 @@ class JobDetailsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        actions: [
+          StreamBuilder<bool>(
+            stream: FirebaseService().isBookmarked(job.id),
+            builder: (context, snapshot) {
+              final isFav = snapshot.data ?? false;
+              return IconButton(
+                icon: Icon(isFav ? Icons.bookmark : Icons.bookmark_border, color: AppColors.primary),
+                onPressed: () {
+                  FirebaseService().toggleBookmark(job.id, {
+                    'title': job.title,
+                    'company': job.company,
+                    'location': job.location,
+                    'salary': job.salary,
+                    'logoUrl': job.logoUrl,
+                    'type': job.type,
+                    'category': 'job',
+                  });
+                },
+              );
+            },
+          ),
+          const SizedBox(width: 10),
+        ],
       ),
       extendBodyBehindAppBar: true,
       body: SingleChildScrollView(
@@ -133,12 +157,20 @@ class JobDetailsScreen extends StatelessWidget {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Application Submitted Successfully!'),
-                ),
-              );
+            onPressed: () async {
+              await FirebaseService().applyForJob(job.id, {
+                'title': job.title,
+                'company': job.company,
+                'location': job.location,
+                'logoUrl': job.logoUrl,
+                'salary': job.salary,
+                'type': job.type,
+              });
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Application Submitted Successfully!')),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,

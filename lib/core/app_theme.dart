@@ -65,4 +65,46 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
+        surface: Colors.white,
+        error: AppColors.error,
+      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme).copyWith(
+        displayLarge: GoogleFonts.outfit(
+          color: const Color(0xFF1A1A1A),
+          fontWeight: FontWeight.bold,
+          fontSize: 32,
+        ),
+        titleLarge: GoogleFonts.outfit(
+          color: const Color(0xFF1A1A1A),
+          fontWeight: FontWeight.w600,
+          fontSize: 20,
+        ),
+        bodyMedium: GoogleFonts.outfit(
+          color: const Color(0xFF4A4A4A),
+          fontSize: 16,
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: const IconThemeData(color: Color(0xFF1A1A1A)),
+        titleTextStyle: GoogleFonts.outfit(
+          color: const Color(0xFF1A1A1A),
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 }

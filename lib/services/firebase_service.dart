@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 import '../models/models.dart';
 
 class FirebaseService {
@@ -187,5 +189,179 @@ class FirebaseService {
     if (user != null) {
       await user.updateDisplayName(name);
     }
+  }
+
+  // Upload Profile Image
+  Future<String> uploadProfileImage(File file) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+
+    final ref = FirebaseStorage.instance.ref().child('profile_images').child('${user.uid}.jpg');
+    await ref.putFile(file);
+    final url = await ref.getDownloadURL();
+    
+    await user.updatePhotoURL(url);
+    return url;
+  }
+
+  // --- Search Functionality ---
+
+  // Search Jobs
+  Future<List<JobModel>> searchJobs(String query, String collection) async {
+    final snapshot = await _db.collection(collection).get();
+    return snapshot.docs
+        .map((doc) => JobModel(
+              id: doc.id,
+              title: doc.get('title') ?? '',
+              company: doc.get('company') ?? '',
+              location: doc.get('location') ?? '',
+              salary: doc.get('salary') ?? '',
+              logoUrl: doc.get('logoUrl') ?? '',
+              type: doc.get('type') ?? '',
+              postedDate: 'Recently',
+              description: doc.get('description') ?? '',
+            ))
+        .where((job) => job.title.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+  }
+
+  // Search Programs
+  Future<List<ProgramModel>> searchPrograms(String query, String collection) async {
+    final snapshot = await _db.collection(collection).get();
+    return snapshot.docs
+        .map((doc) => ProgramModel(
+              id: doc.id,
+              title: doc.get('title') ?? '',
+              university: doc.get('university') ?? '',
+              country: doc.get('country') ?? '',
+              imageUrl: doc.get('imageUrl') ?? '',
+              duration: doc.get('duration') ?? '',
+              cost: doc.get('cost') ?? '',
+              requirements: doc.get('requirements') ?? '',
+              description: doc.get('description') ?? '',
+            ))
+        .where((p) => p.title.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+  }
+
+  // --- Bookmarking System ---
+
+  // Toggle Bookmark
+  Future<void> toggleBookmark(String itemId, Map<String, dynamic> itemData) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final docRef = _db.collection('users').doc(user.uid).collection('bookmarks').doc(itemId);
+    final doc = await docRef.get();
+
+    if (doc.exists) {
+      await docRef.delete();
+    } else {
+      await docRef.set({
+        ...itemData,
+        'savedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  // Check if bookmarked
+  Stream<bool> isBookmarked(String itemId) {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value(false);
+
+    return _db.collection('users').doc(user.uid).collection('bookmarks').doc(itemId)
+        .snapshots()
+        .map((doc) => doc.exists);
+  }
+
+  // Get Saved Items
+  Stream<QuerySnapshot> getSavedItems() {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _db.collection('users').doc(user.uid).collection('bookmarks')
+        .orderBy('savedAt', descending: true)
+        .snapshots();
+  }
+
+  // --- Chat System ---
+
+  // Send Message
+  Future<void> sendMessage(String message) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await _db.collection('chats').doc(user.uid).collection('messages').add({
+      'text': message,
+      'senderId': user.uid,
+      'senderName': user.displayName ?? 'Student',
+      'timestamp': FieldValue.serverTimestamp(),
+      'isAdmin': false,
+    });
+
+    // Notify admin in a global 'active_chats' collection
+    await _db.collection('active_chats').doc(user.uid).set({
+      'lastMessage': message,
+      'timestamp': FieldValue.serverTimestamp(),
+      'userName': user.displayName ?? 'Student',
+      'userEmail': user.email,
+      'unread': true,
+    });
+  }
+
+  // Get Messages
+  Stream<QuerySnapshot> getMessages(String userId) {
+    return _db.collection('chats').doc(userId).collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
+  // Admin Send Reply
+  Future<void> sendAdminReply(String userId, String message) async {
+    await _db.collection('chats').doc(userId).collection('messages').add({
+      'text': message,
+      'senderId': 'admin',
+      'senderName': 'Admin',
+      'timestamp': FieldValue.serverTimestamp(),
+      'isAdmin': true,
+    });
+
+    await _db.collection('active_chats').doc(userId).update({
+      'lastMessage': message,
+      'timestamp': FieldValue.serverTimestamp(),
+      'unread': false,
+    });
+  }
+
+  // --- Video Learning ---
+  Future<void> addVideo(String title, String youtubeId, String author, String duration) async {
+    await _db.collection('videos').add({
+      'title': title,
+      'id': youtubeId,
+      'author': author,
+      'duration': duration,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // --- Job Applications ---
+  Future<void> applyForJob(String jobId, Map<String, dynamic> jobData) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await _db.collection('users').doc(user.uid).collection('applications').doc(jobId).set({
+      ...jobData,
+      'appliedAt': FieldValue.serverTimestamp(),
+      'status': 'Pending',
+    });
+  }
+
+  Stream<QuerySnapshot> getAppliedJobs() {
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
+
+    return _db.collection('users').doc(user.uid).collection('applications')
+        .orderBy('appliedAt', descending: true)
+        .snapshots();
   }
 }
