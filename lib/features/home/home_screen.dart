@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/custom_card.dart';
@@ -8,7 +7,7 @@ import '../jobs/jobs_screen.dart';
 import '../study_abroad/programs_screen.dart';
 import '../masters/masters_screen.dart';
 import '../internships/internships_screen.dart';
-import '../cv_builder/cv_form_screen.dart';
+import '../cv_builder/cv_builder_screen.dart';
 import '../portfolio_guide/portfolio_guide_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../search/search_screen.dart';
@@ -31,11 +30,11 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 30),
               _buildSearchBar(context),
               const SizedBox(height: 35),
-              _buildSectionTitle("Explore Paths"),
+              _buildSectionTitle(context, "Explore Paths"),
               const SizedBox(height: 20),
               _buildCategoryGrid(context),
               const SizedBox(height: 35),
-              _buildSectionTitle("Recently Added Videos"),
+              _buildSectionTitle(context, "Recently Added Videos"),
               const SizedBox(height: 20),
               _buildVideoSlides(),
               const SizedBox(height: 30),
@@ -60,15 +59,15 @@ class HomeScreen extends StatelessWidget {
                 Text(
                   "Hi, ${FirebaseAuth.instance.currentUser?.displayName ?? 'Student'}!",
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.getTextSecondary(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Text(
+                Text(
                   "Find Your Path",
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.getTextPrimary(context),
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
@@ -90,11 +89,11 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.getSurface(context),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
-                child: const Icon(Icons.notifications_outlined, size: 22, color: Colors.white),
+                child: Icon(Icons.notifications_outlined, size: 22, color: AppColors.getTextPrimary(context)),
               ),
               StreamBuilder<int>(
                 stream: FirebaseService().getUnreadNotificationCount(),
@@ -139,17 +138,17 @@ class HomeScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.getSurface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [
-            Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+            Icon(Icons.search, size: 18, color: AppColors.getTextSecondary(context)),
             const SizedBox(width: 10),
             Text(
               "Search for guidance...",
-              style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.5)),
+              style: TextStyle(color: AppColors.getTextSecondary(context).withValues(alpha: 0.5)),
             ),
           ],
         ),
@@ -157,20 +156,25 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: AppColors.getTextPrimary(context),
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
         TextButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (innerContext) => const GuideListScreen(category: 'All')),
+            );
+          },
           child: const Text("See All", style: TextStyle(color: AppColors.primary)),
         ),
       ],
@@ -197,46 +201,46 @@ class HomeScreen extends StatelessWidget {
         childAspectRatio: 1.1,
       ),
       itemCount: categories.length,
-      itemBuilder: (context, index) {
+      itemBuilder: (context2, index) {
         final cat = categories[index];
         return CustomCard(
           onTap: () {
             final title = cat['title'] as String;
             if (title == 'Jobs') {
               Navigator.push(
-                context,
+                context2,
                 MaterialPageRoute(builder: (context) => const JobsScreen()),
               );
             } else if (title == 'Masters') {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MastersScreen()),
+                context2,
+                MaterialPageRoute(builder: (innerContext) => const MastersScreen()),
               );
             } else if (title == 'Study Abroad') {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProgramsScreen(category: 'Study Abroad')),
+                context2,
+                MaterialPageRoute(builder: (innerContext) => const ProgramsScreen(category: 'Study Abroad')),
               );
             } else if (title == 'Internships') {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const InternshipsScreen()),
+                context2,
+                MaterialPageRoute(builder: (innerContext) => const InternshipsScreen()),
               );
             } else if (title == 'CV Builder') {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CVFormScreen()),
+                context2,
+                MaterialPageRoute(builder: (innerContext) => const CvBuilderScreen()),
               );
             } else if (title == 'Portfolio') {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PortfolioGuideScreen()),
+                context2,
+                MaterialPageRoute(builder: (innerContext) => const PortfolioGuideScreen()),
               );
             } else {
               Navigator.push(
-                context,
+                context2,
                 MaterialPageRoute(
-                  builder: (context) => GuideListScreen(category: title),
+                  builder: (innerContext) => GuideListScreen(category: title),
                 ),
               );
             }
@@ -255,9 +259,10 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 cat['title'] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  color: AppColors.getTextPrimary(context2),
                 ),
               ),
             ],

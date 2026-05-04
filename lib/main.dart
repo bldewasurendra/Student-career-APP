@@ -4,7 +4,7 @@ import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'core/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'features/splash/splash_screen.dart';
+import 'features/auth/auth_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,10 +38,10 @@ class UniPathApp extends StatelessWidget {
     return MaterialApp(
       title: 'UniPath',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // You need to define this in AppTheme
+      theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
-      home: const SplashScreen(),
+      home: const AuthWrapper(),
     );
   }
 }

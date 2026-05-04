@@ -14,7 +14,6 @@ class SupportChatScreen extends StatefulWidget {
 class _SupportChatScreenState extends State<SupportChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseService _firebaseService = FirebaseService();
-  final ScrollController _scrollController = ScrollController();
 
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;

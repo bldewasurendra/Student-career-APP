@@ -26,6 +26,76 @@ class _ChatReplyScreenState extends State<ChatReplyScreen> {
     await _firebaseService.sendAdminReply(widget.userId, msg);
   }
 
+  void _deleteMessage(String msgId) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .collection('messages')
+        .doc(msgId)
+        .delete();
+  }
+
+  void _editMessage(String msgId, String currentText) {
+    _messageController.text = currentText;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text("Edit Message", style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: _messageController,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(hintText: "Enter new text", hintStyle: TextStyle(color: Colors.white24)),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () async {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(widget.userId)
+                  .collection('messages')
+                  .doc(msgId)
+                  .update({'text': _messageController.text.trim()});
+              Navigator.pop(context);
+              _messageController.clear();
+            }, 
+            child: const Text("Save", style: TextStyle(color: AppColors.primary))
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOptions(String msgId, String text, bool isMe) {
+    if (!isMe) return; // Only edit/delete own messages
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit, color: Colors.white70),
+            title: const Text("Edit Message", style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context);
+              _editMessage(msgId, text);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.redAccent),
+            title: const Text("Delete Message", style: TextStyle(color: Colors.redAccent)),
+            onTap: () {
+              Navigator.pop(context);
+              _deleteMessage(msgId);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,16 +124,19 @@ class _ChatReplyScreenState extends State<ChatReplyScreen> {
                     
                     return Align(
                       alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isAdmin ? AppColors.primary : AppColors.surface,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Text(
-                          msg['text'] ?? '',
-                          style: const TextStyle(color: Colors.white),
+                      child: GestureDetector(
+                        onLongPress: () => _showOptions(messages[index].id, msg['text'] ?? '', isAdmin),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isAdmin ? AppColors.primary : AppColors.surface,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Text(
+                            msg['text'] ?? '',
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     );

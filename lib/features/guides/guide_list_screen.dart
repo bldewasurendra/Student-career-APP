@@ -83,6 +83,21 @@ class GuideListScreen extends StatelessWidget {
 
   List<Map<String, String>> _getGuidesForCategory(String category) {
     switch (category) {
+      case 'All':
+        return [
+          {'title': 'Finding Your First Internship', 'subtitle': 'A step-by-step guide for beginners', 'content': '...'},
+          {'title': 'Nailing the Interview', 'subtitle': 'Common questions and best answers', 'content': '...'},
+          {'title': 'LinkedIn Optimization', 'subtitle': 'How to get noticed by recruiters', 'content': '...'},
+          {'title': 'Full-time vs Freelance', 'subtitle': 'Which path is right for you?', 'content': '...'},
+          {'title': 'Negotiating Your Salary', 'subtitle': 'Don\'t leave money on the table', 'content': '...'},
+          {'title': 'Corporate Culture 101', 'subtitle': 'What to expect in your first job', 'content': '...'},
+          {'title': 'Choosing a Specialization', 'subtitle': 'Aligning your MS with your goals', 'content': '...'},
+          {'title': 'Writing a Killer SOP', 'subtitle': 'The secret to getting admitted', 'content': '...'},
+          {'title': 'Scholarship Search', 'subtitle': 'How to fund your further education', 'content': '...'},
+          {'title': 'Top Countries for Students', 'subtitle': 'Cost vs Quality of Education', 'content': '...'},
+          {'title': 'Visa Application Process', 'subtitle': 'Everything you need to know', 'content': '...'},
+          {'title': 'Lifestyle as an International Student', 'subtitle': 'Adapting to a new culture', 'content': '...'},
+        ];
       case 'Internships':
         return [
           {'title': 'Finding Your First Internship', 'subtitle': 'A step-by-step guide for beginners', 'content': '...'},

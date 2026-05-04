@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/admin_access.dart';
 import '../../core/app_colors.dart';
 import '../../widgets/custom_card.dart';
+import '../../services/firebase_service.dart';
 import '../admin/admin_dashboard.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
 import 'saved_screen.dart';
 import 'support_chat_screen.dart';
 import 'applied_jobs_screen.dart';
-import '../../services/firebase_service.dart';
+import 'about_uni_path_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,39 +22,76 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const List<String> adminEmails = [
-    'admin@unipath.com',
-    'oktech@gmail.com',
-    'lenminibhagya@gmail.com',
-  ];
-
   bool _isStudentView = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStudentViewPreference();
+  }
+
+  String _studentViewPreferenceKey(String uid) => 'profile_student_view_$uid';
+
+  Future<void> _loadStudentViewPreference() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || !AdminAccess.isAllowedUser(user)) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedValue = prefs.getBool(_studentViewPreferenceKey(user.uid)) ?? false;
+
+    if (mounted) {
+      setState(() {
+        _isStudentView = savedValue;
+      });
+    }
+  }
+
+  Future<void> _setStudentView(bool value) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _isStudentView = value;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_studentViewPreferenceKey(user.uid), value);
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final isActuallyAdmin = user != null && adminEmails.contains(user.email);
+    final isActuallyAdmin = AdminAccess.isAllowedUser(user);
     final showAdminFeatures = isActuallyAdmin && !_isStudentView;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("My Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "My Profile",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            ),
           ),
           if (isActuallyAdmin)
             Row(
               children: [
-                const Text("Student View", style: TextStyle(fontSize: 12, color: Colors.white70)),
+                const Text(
+                  "Student View",
+                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                ),
                 Switch(
                   value: _isStudentView,
                   activeColor: AppColors.primary,
-                  onChanged: (v) => setState(() => _isStudentView = v),
+                  onChanged: _setStudentView,
                 ),
               ],
             ),
@@ -74,18 +114,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                    backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
-                    child: user?.photoURL == null 
-                      ? Text(
-                          user?.email?[0].toUpperCase() ?? "U",
-                          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
-                        )
-                      : null,
+                    backgroundImage: user?.photoURL != null
+                        ? NetworkImage(user!.photoURL!)
+                        : null,
+                    child: user?.photoURL == null
+                        ? Text(
+                            user?.email?[0].toUpperCase() ?? "U",
+                            style: const TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(height: 15),
                   Text(
-                    user?.displayName ?? (showAdminFeatures ? "System Administrator" : "Future Graduate"),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                    user?.displayName ??
+                        (showAdminFeatures
+                            ? "System Administrator"
+                            : "Future Graduate"),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -95,24 +148,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 25),
-            
+
             // Activity Stats
             Row(
               children: [
-                _buildStatCard("Saved", "View", Icons.bookmark_outline, onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SavedScreen()));
-                }),
+                _buildStatCard(
+                  "Saved",
+                  "View",
+                  Icons.bookmark_outline,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SavedScreen(),
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(width: 15),
                 StreamBuilder<QuerySnapshot>(
                   stream: FirebaseService().getAppliedJobs(),
                   builder: (context, snapshot) {
-                    final count = snapshot.hasData ? snapshot.data!.docs.length.toString().padLeft(2, '0') : "00";
-                    return _buildStatCard("Applied", count, Icons.send_outlined, onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AppliedJobsScreen()));
-                    });
-                  }
+                    final count = snapshot.hasData
+                        ? snapshot.data!.docs.length.toString().padLeft(2, '0')
+                        : "00";
+                    return _buildStatCard(
+                      "Applied",
+                      count,
+                      Icons.send_outlined,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AppliedJobsScreen(),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
                 const SizedBox(width: 15),
                 _buildStatCard("Points", "250", Icons.star_outline),
@@ -120,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
 
             const SizedBox(height: 30),
-            
+
             // Main Options
             _buildSectionTitle("Account Settings"),
             if (showAdminFeatures)
@@ -130,36 +205,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 "Admin Dashboard",
                 subtitle: "Manage jobs, programs & notifications",
                 color: Colors.amber,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminDashboard())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminDashboard(),
+                  ),
+                ),
               ),
-            
+
             _buildOption(
-              context, 
-              Icons.person_outline, 
-              "Personal Information", 
+              context,
+              Icons.person_outline,
+              "Personal Information",
               subtitle: "Update your name",
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen())),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
+                ),
+              ),
             ),
             _buildOption(
-              context, 
-              Icons.security_outlined, 
-              "Security", 
+              context,
+              Icons.security_outlined,
+              "Security",
               subtitle: "Change password & 2FA",
               onTap: () => _showSecurityDialog(context),
             ),
-            
+
             const SizedBox(height: 20),
             _buildSectionTitle("General"),
             _buildOption(
-              context, 
-              Icons.help_outline, 
+              context,
+              Icons.help_outline,
               "Help & Support",
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportChatScreen())),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SupportChatScreen(),
+                ),
+              ),
             ),
-            _buildOption(context, Icons.info_outline, "About UniPath"),
-            
+            _buildOption(
+              context,
+              Icons.info_outline,
+              "About UniPath",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AboutUniPathScreen(),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 30),
-            
+
             // Logout
             CustomCard(
               onTap: () async {
@@ -170,7 +270,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Icon(Icons.logout, color: AppColors.error),
                   SizedBox(width: 10),
-                  Text("Logout Account", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Logout Account",
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -181,7 +287,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, {VoidCallback? onTap}) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -196,8 +307,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(icon, color: AppColors.primary, size: 20),
               const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-              Text(label, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: Colors.white54),
+              ),
             ],
           ),
         ),
@@ -210,7 +331,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       alignment: Alignment.centerLeft,
       child: Padding(
         padding: const EdgeInsets.only(left: 5, bottom: 15),
-        child: Text(title, style: const TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
       ),
     );
   }
@@ -220,27 +349,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text("Security Settings", style: TextStyle(color: Colors.white)),
-        content: const Text("Would you like to reset your password? We will send a reset link to your email.", style: TextStyle(color: Colors.white70)),
+        title: const Text(
+          "Security Settings",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          "Would you like to reset your password? We will send a reset link to your email.",
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
           TextButton(
             onPressed: () async {
               final user = FirebaseAuth.instance.currentUser;
               if (user != null && user.email != null) {
-                await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
+                await FirebaseAuth.instance.sendPasswordResetEmail(
+                  email: user.email!,
+                );
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password reset email sent!")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Password reset email sent!")),
+                );
               }
-            }, 
-            child: const Text("Send Email", style: TextStyle(color: AppColors.primary))
+            },
+            child: const Text(
+              "Send Email",
+              style: TextStyle(color: AppColors.primary),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOption(BuildContext context, IconData icon, String title, {String? subtitle, Color? color, VoidCallback? onTap}) {
+  Widget _buildOption(
+    BuildContext context,
+    IconData icon,
+    String title, {
+    String? subtitle,
+    Color? color,
+    VoidCallback? onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: CustomCard(
@@ -260,8 +412,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  if (subtitle != null) Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white54,
+                      ),
+                    ),
                 ],
               ),
             ),

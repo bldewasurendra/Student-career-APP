@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/admin_access.dart';
 import '../../core/app_colors.dart';
 import '../../models/models.dart';
 import '../../services/firebase_service.dart';
@@ -41,6 +43,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _selectedImage = File(image.path);
       });
     }
+  }
+
+  bool get _isVideoCategory => _selectedCategory == 'Learning Videos';
+
+  void _changeCategory(String category) {
+    setState(() {
+      _selectedCategory = category;
+      _clearForm();
+    });
   }
 
   void _submitData() async {
@@ -118,6 +129,32 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final isAllowedAdmin = AdminAccess.isAllowedUser(user);
+
+    if (!isAllowedAdmin) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          title: const Text(
+            "Admin Panel",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              "You do not have permission to access the admin panel.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ),
+        ),
+      );
+    }
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
@@ -167,19 +204,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   isExpanded: true,
                   style: const TextStyle(color: Colors.white),
                   items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (v) => setState(() => _selectedCategory = v!),
+                  onChanged: (v) => _changeCategory(v!),
                 ),
               ),
             ),
             const SizedBox(height: 25),
             _buildField(_titleController, "Title"),
-            _buildField(_companyOrUniController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Company" : "University"),
-            _buildField(_locationOrCountryController, "Location/Country"),
-            _buildField(_salaryOrCostController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Salary" : "Cost"),
-            _buildField(_typeOrDurationController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Type" : "Duration"),
-            _buildField(_imageUrlController, _selectedCategory == 'Learning Videos' ? "YouTube Video ID" : "Image URL (Optional)", isRequired: _selectedCategory == 'Learning Videos'),
-            
-            if (_selectedCategory != 'Learning Videos') ...[
+            if (_isVideoCategory) ...[
+              _buildField(_companyOrUniController, "Author Name"),
+              _buildField(_typeOrDurationController, "Duration"),
+              _buildField(_imageUrlController, "YouTube Video ID"),
+            ] else ...[
+              _buildField(_companyOrUniController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Company" : "University"),
+              _buildField(_locationOrCountryController, "Location/Country"),
+              _buildField(_salaryOrCostController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Salary" : "Cost"),
+              _buildField(_typeOrDurationController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Type" : "Duration"),
+              _buildField(_imageUrlController, "Image URL (Optional)", isRequired: false),
               const Text("Or Select from Gallery", style: TextStyle(color: Colors.white70, fontSize: 14)),
               const SizedBox(height: 10),
               GestureDetector(
@@ -208,9 +248,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
               const SizedBox(height: 20),
+              if (!_selectedCategory.contains('Job')) _buildField(_requirementsController, "Requirements", maxLines: 2),
+              _buildField(_descriptionController, "Description", maxLines: 4),
             ],
-            if (!_selectedCategory.contains('Job') && _selectedCategory != 'Learning Videos') _buildField(_requirementsController, "Requirements", maxLines: 2),
-            if (_selectedCategory != 'Learning Videos') _buildField(_descriptionController, "Description", maxLines: 4),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -218,7 +258,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitData,
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Publish Now", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(_isVideoCategory ? "Publish Video" : "Publish Now", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 50),

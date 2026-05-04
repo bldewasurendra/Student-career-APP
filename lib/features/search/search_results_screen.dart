@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_colors.dart';
 import '../jobs/job_details_screen.dart';
-import '../masters/masters_guide_screen.dart';
 import '../../models/models.dart';
 
 class SearchResultsScreen extends StatefulWidget {

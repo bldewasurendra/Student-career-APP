@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_colors.dart';
 
 class PortfolioGuideScreen extends StatelessWidget {
@@ -26,10 +27,38 @@ class PortfolioGuideScreen extends StatelessWidget {
               style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 15),
-            _buildPlatformCard("GitHub", "Best for Developers and Programmers to host code.", Icons.code, Colors.purple),
-            _buildPlatformCard("Behance", "Ideal for Graphic Designers and UI/UX artists.", Icons.palette_outlined, Colors.blue),
-            _buildPlatformCard("LinkedIn", "Great for all professionals to showcase achievements.", Icons.link, Colors.indigo),
-            _buildPlatformCard("Personal Web", "The most professional way. Build your own site.", Icons.language, Colors.teal),
+            _buildPlatformCard(
+              context,
+              "GitHub",
+              "Best for Developers and Programmers to host code.",
+              Icons.code,
+              Colors.purple,
+              "https://github.com",
+            ),
+            _buildPlatformCard(
+              context,
+              "Behance",
+              "Ideal for Graphic Designers and UI/UX artists.",
+              Icons.palette_outlined,
+              Colors.blue,
+              "https://www.behance.net",
+            ),
+            _buildPlatformCard(
+              context,
+              "LinkedIn",
+              "Great for all professionals to showcase achievements.",
+              Icons.link,
+              Colors.indigo,
+              "https://www.linkedin.com",
+            ),
+            _buildPlatformCard(
+              context,
+              "Personal Web",
+              "The most professional way. Build your own site.",
+              Icons.language,
+              Colors.teal,
+              "https://www.google.com/search?q=build+your+portfolio+website",
+            ),
             
             const SizedBox(height: 30),
             const Text(
@@ -90,7 +119,14 @@ class PortfolioGuideScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPlatformCard(String name, String desc, IconData icon, Color color) {
+  Widget _buildPlatformCard(
+    BuildContext context,
+    String name,
+    String desc,
+    IconData icon,
+    Color color,
+    String url,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(15),
@@ -112,9 +148,20 @@ class PortfolioGuideScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
                 Text(desc, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(
+            onPressed: () => _openExternalLink(context, url),
+            style: TextButton.styleFrom(
+              foregroundColor: color,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              backgroundColor: color.withValues(alpha: 0.08),
+            ),
+            child: const Text("Open"),
           ),
         ],
       ),
@@ -176,5 +223,21 @@ class PortfolioGuideScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openExternalLink(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    final canOpen = await canLaunchUrl(uri);
+
+    if (!canOpen) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not open the link.")),
+        );
+      }
+      return;
+    }
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
