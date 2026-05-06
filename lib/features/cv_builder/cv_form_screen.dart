@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/cv_builder/cv_pdf_service.dart';
 import 'package:printing/printing.dart';
 import '../../core/app_colors.dart';
 import '../../models/cv_model.dart';
-import 'cv_pdf_service.dart';
+
 
 class CVFormScreen extends StatefulWidget {
   const CVFormScreen({super.key});
@@ -12,7 +13,7 @@ class CVFormScreen extends StatefulWidget {
 }
 
 class _CVFormScreenState extends State<CVFormScreen> {
-  final CVData _cvData = CVData(
+  final CvModel _cvData = CvModel(
     education: [Education()],
     experience: [Experience()],
     skills: [],
@@ -24,13 +25,41 @@ class _CVFormScreenState extends State<CVFormScreen> {
     int score = 0;
     List<String> tips = [];
 
-    if (_cvData.fullName.length > 3) score += 10; else tips.add("Add your full name");
-    if (_cvData.email.contains("@")) score += 10; else tips.add("Add a valid email");
-    if (_cvData.phone.length > 5) score += 5; else tips.add("Add your phone number");
-    if (_cvData.summary.length > 20) score += 15; else tips.add("Write a professional summary (min 20 chars)");
-    if (_cvData.education.any((e) => e.degree.isNotEmpty)) score += 20; else tips.add("Add your educational qualifications");
-    if (_cvData.experience.any((e) => e.jobTitle.isNotEmpty)) score += 20; else tips.add("Add your work experience");
-    if (_cvData.skills.length >= 3) score += 20; else tips.add("Add at least 3 relevant skills");
+    if (_cvData.fullName.length > 3) {
+      score += 10;
+    } else {
+      tips.add("Add your full name");
+    }
+    if (_cvData.email.contains("@")) {
+      score += 10;
+    } else {
+      tips.add("Add a valid email");
+    }
+    if (_cvData.phoneNumber.length > 5) {
+      score += 5;
+    } else {
+      tips.add("Add your phone number");
+    }
+    if (_cvData.personalStatement.length > 20) {
+      score += 15;
+    } else {
+      tips.add("Write a professional summary (min 20 chars)");
+    }
+    if (_cvData.education.any((e) => e.degree.isNotEmpty)) {
+      score += 20;
+    } else {
+      tips.add("Add your educational qualifications");
+    }
+    if (_cvData.experience.any((e) => e.jobTitle.isNotEmpty)) {
+      score += 20;
+    } else {
+      tips.add("Add your work experience");
+    }
+    if (_cvData.skills.length >= 3) {
+      score += 20;
+    } else {
+      tips.add("Add at least 3 relevant skills");
+    }
 
     showDialog(
       context: context,
@@ -84,9 +113,16 @@ class _CVFormScreenState extends State<CVFormScreen> {
   }
 
   void _generateAndPreview() async {
-    final pdfBytes = await CVPdfService.generateCV(_cvData);
+    final pdfFile = await CvPdfService.generateStyledCv(_cvData);
     if (mounted) {
-      await Printing.layoutPdf(onLayout: (format) => pdfBytes);
+      // This is a simplified way to show the user where the file is.
+      // For a real app, you might use a file viewer or share intent.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('PDF saved to ${pdfFile.path}'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 
@@ -116,9 +152,8 @@ class _CVFormScreenState extends State<CVFormScreen> {
             _buildSectionHeader("Personal Information"),
             _buildTextField("Full Name", (v) => _cvData.fullName = v),
             _buildTextField("Email", (v) => _cvData.email = v),
-            _buildTextField("Phone", (v) => _cvData.phone = v),
-            _buildTextField("Address", (v) => _cvData.address = v),
-            _buildTextField("Professional Summary", (v) => _cvData.summary = v, maxLines: 3),
+            _buildTextField("Phone", (v) => _cvData.phoneNumber = v),
+            _buildTextField("Professional Summary", (v) => _cvData.personalStatement = v, maxLines: 3),
             
             const SizedBox(height: 30),
             _buildSectionHeader("Work Experience"),
@@ -219,7 +254,6 @@ class _CVFormScreenState extends State<CVFormScreen> {
         children: [
           _buildTextField("Job Title", (v) => _cvData.experience[index].jobTitle = v),
           _buildTextField("Company", (v) => _cvData.experience[index].company = v),
-          _buildTextField("Duration (e.g. 2020 - 2022)", (v) => _cvData.experience[index].duration = v),
           _buildTextField("Description", (v) => _cvData.experience[index].description = v, maxLines: 2),
         ],
       ),

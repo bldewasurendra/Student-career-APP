@@ -1,19 +1,17 @@
-class CVData {
+class CvModel {
   String fullName;
   String email;
-  String phone;
-  String address;
-  String summary;
+  String phoneNumber;
+  String personalStatement;
   List<Education> education;
   List<Experience> experience;
   List<String> skills;
 
-  CVData({
+  CvModel({
     this.fullName = '',
     this.email = '',
-    this.phone = '',
-    this.address = '',
-    this.summary = '',
+    this.phoneNumber = '',
+    this.personalStatement = '',
     List<Education>? education,
     List<Experience>? experience,
     List<String>? skills,
@@ -33,13 +31,11 @@ class Education {
 class Experience {
   String jobTitle;
   String company;
-  String duration;
   String description;
 
   Experience({
     this.jobTitle = '',
     this.company = '',
-    this.duration = '',
     this.description = '',
   });
 }

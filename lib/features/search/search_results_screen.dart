@@ -28,7 +28,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         stream: FirebaseFirestore.instance
             .collection('jobs')
             .where('title', isGreaterThanOrEqualTo: widget.query)
-            .where('title', isLessThanOrEqualTo: widget.query + '\uf8ff')
+            .where('title', isLessThanOrEqualTo: '${widget.query}\uf8ff')
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

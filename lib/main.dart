@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_application_1/services/notification_service.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
 import 'core/theme_provider.dart';
@@ -13,6 +14,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    await NotificationService().initialize();
   } catch (e) {
     debugPrint("Firebase initialization failed: $e");
     debugPrint("App will continue in offline/mock mode.");
