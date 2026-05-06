@@ -41,7 +41,7 @@ class CvPdfService {
   /// Generates a plain-text, ATS-friendly CV PDF.
   static Future<File> createAtsCv(CvModel data) async {
     final pdf = pw.Document();
-    final font = await PdfGoogleFonts.helvetica();
+    final font = await PdfGoogleFonts.robotoRegular();
 
     pdf.addPage(
       pw.Page(
@@ -50,7 +50,7 @@ class CvPdfService {
         build: (pw.Context context) {
           return pw.Text(
             data.personalStatement, // The full text is stored here
-            style: pw.TextStyle(font: font, fontSize: 11, lineHeight: 1.5),
+            style: pw.TextStyle(font: font, fontSize: 11, height: 1.5),
           );
         },
       ),

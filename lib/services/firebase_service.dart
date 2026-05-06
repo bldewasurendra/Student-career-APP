@@ -334,12 +334,13 @@ class FirebaseService {
   }
 
   // --- Video Learning ---
-  Future<void> addVideo(String title, String youtubeId, String author, String duration) async {
+  Future<void> addVideo(String title, String youtubeId, String author, String duration, {String? thumbnailUrl}) async {
     await _db.collection('videos').add({
       'title': title,
       'id': youtubeId,
       'author': author,
       'duration': duration,
+      'thumbnailUrl': thumbnailUrl ?? 'https://img.youtube.com/vi/$youtubeId/0.jpg',
       'timestamp': FieldValue.serverTimestamp(),
     });
   }

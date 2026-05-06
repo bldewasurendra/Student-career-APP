@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/cv_builder/cv_pdf_service.dart';
-import 'package:printing/printing.dart';
 import '../../core/app_colors.dart';
 import '../../models/cv_model.dart';
 

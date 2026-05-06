@@ -41,6 +41,7 @@ class VideoLearningScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final video = videos[index].data() as Map<String, dynamic>;
               final videoId = video['id'] ?? '';
+              final thumbnailUrl = video['thumbnailUrl'] ?? 'https://img.youtube.com/vi/$videoId/0.jpg';
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
@@ -68,7 +69,7 @@ class VideoLearningScreen extends StatelessWidget {
                               top: Radius.circular(24),
                             ),
                             child: Image.network(
-                              "https://img.youtube.com/vi/$videoId/0.jpg",
+                              thumbnailUrl,
                               height: 180,
                               width: double.infinity,
                               fit: BoxFit.cover,

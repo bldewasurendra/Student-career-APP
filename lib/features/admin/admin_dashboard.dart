@@ -28,6 +28,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final TextEditingController _locationOrCountryController = TextEditingController();
   final TextEditingController _salaryOrCostController = TextEditingController();
   final TextEditingController _imageUrlController = TextEditingController();
+  final TextEditingController _thumbnailUrlController = TextEditingController();
   final TextEditingController _typeOrDurationController = TextEditingController();
   final TextEditingController _requirementsController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -83,11 +84,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
         await _firebaseService.addJob(job, categoryKey);
         await _firebaseService.addNotification("New $_selectedCategory!", "${job.title} at ${job.company}.");
       } else if (_selectedCategory == 'Learning Videos') {
+        final thumbnailUrl = _thumbnailUrlController.text.isNotEmpty
+            ? _thumbnailUrlController.text
+            : 'https://img.youtube.com/vi/${_imageUrlController.text}/0.jpg';
         await _firebaseService.addVideo(
           _titleController.text,
           _imageUrlController.text, // YouTube Video ID
           _companyOrUniController.text, // Author
           _typeOrDurationController.text, // Duration
+          thumbnailUrl: thumbnailUrl,
         );
         await _firebaseService.addNotification("New Video!", "New learning resource: ${_titleController.text}");
       } else {
@@ -121,6 +126,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _locationOrCountryController.clear();
     _salaryOrCostController.clear();
     _imageUrlController.clear();
+    _thumbnailUrlController.clear();
     _typeOrDurationController.clear();
     _requirementsController.clear();
     _descriptionController.clear();
@@ -214,6 +220,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
               _buildField(_companyOrUniController, "Author Name"),
               _buildField(_typeOrDurationController, "Duration"),
               _buildField(_imageUrlController, "YouTube Video ID"),
+              _buildField(_thumbnailUrlController, "Thumbnail URL (Optional)", isRequired: false),
+              const SizedBox(height: 10),
+              _buildVideoThumbnailPreview(),
             ] else ...[
               _buildField(_companyOrUniController, _selectedCategory.contains('Job') || _selectedCategory.contains('Internship') ? "Company" : "University"),
               _buildField(_locationOrCountryController, "Location/Country"),
@@ -265,6 +274,49 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVideoThumbnailPreview() {
+    final videoId = _imageUrlController.text.trim();
+    final thumbnailUrl = _thumbnailUrlController.text.trim().isNotEmpty
+        ? _thumbnailUrlController.text.trim()
+        : (videoId.isNotEmpty ? 'https://img.youtube.com/vi/$videoId/0.jpg' : '');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Thumbnail Preview", style: TextStyle(color: Colors.white70, fontSize: 14)),
+        const SizedBox(height: 10),
+        Container(
+          height: 160,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: thumbnailUrl.isEmpty
+              ? const Center(
+                  child: Text(
+                    "Enter a YouTube Video ID to preview the thumbnail",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                )
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: Image.network(
+                    thumbnailUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Icon(Icons.broken_image_outlined, color: Colors.white38, size: 36),
+                    ),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
@@ -384,6 +436,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
+        onChanged: (_) => setState(() {}),
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
