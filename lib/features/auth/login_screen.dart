@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/app_colors.dart';
 import '../../services/firebase_service.dart';
 import 'register_screen.dart';
@@ -168,9 +169,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.network(
-                        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png",
-                        height: 24,
+                      const FaIcon(
+                        FontAwesomeIcons.google,
+                        color: Colors.black87,
+                        size: 22,
                       ),
                       const SizedBox(width: 15),
                       const Text(

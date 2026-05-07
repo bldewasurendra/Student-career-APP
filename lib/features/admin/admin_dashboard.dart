@@ -35,6 +35,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   bool _isLoading = false;
   File? _selectedImage;
+  File? _selectedThumbnailImage;
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
@@ -44,6 +45,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
         _selectedImage = File(image.path);
       });
     }
+  }
+
+  Future<void> _pickThumbnailImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedThumbnailImage = File(image.path);
+      });
+    }
+  }
+
+  String _extractVideoIdFromUrl(String url) {
+    // Extract video ID from various YouTube URL formats
+    if (url.contains('youtu.be/')) {
+      return url.split('youtu.be/').last.split('?').first;
+    } else if (url.contains('youtube.com/watch?v=')) {
+      return url.split('v=').last.split('&').first;
+    } else if (url.length == 11 && !url.contains('/')) {
+      // Assume it's already a video ID
+      return url;
+    }
+    return '';
   }
 
   bool get _isVideoCategory => _selectedCategory == 'Learning Videos';
@@ -64,7 +87,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       
       // Upload image if selected
       if (_selectedImage != null) {
-        imageUrl = await _firebaseService.uploadProfileImage(_selectedImage!); // We can reuse the profile upload or create a specific one
+        imageUrl = await _firebaseService.uploadFile(_selectedImage!, folder: 'content_images');
       }
 
       final categoryKey = _selectedCategory.toLowerCase().replaceAll(' ', '_');
@@ -84,9 +107,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
         await _firebaseService.addJob(job, categoryKey);
         await _firebaseService.addNotification("New $_selectedCategory!", "${job.title} at ${job.company}.");
       } else if (_selectedCategory == 'Learning Videos') {
-        final thumbnailUrl = _thumbnailUrlController.text.isNotEmpty
-            ? _thumbnailUrlController.text
-            : 'https://img.youtube.com/vi/${_imageUrlController.text}/0.jpg';
+        String thumbnailUrl = 'https://img.youtube.com/vi/${_imageUrlController.text}/0.jpg';
+        
+        // Upload thumbnail image if selected
+        if (_selectedThumbnailImage != null) {
+          thumbnailUrl = await _firebaseService.uploadFile(_selectedThumbnailImage!, folder: 'thumbnails');
+        } else if (_thumbnailUrlController.text.isNotEmpty) {
+          // Use manual URL if provided
+          thumbnailUrl = _thumbnailUrlController.text;
+        }
+        
         await _firebaseService.addVideo(
           _titleController.text,
           _imageUrlController.text, // YouTube Video ID
@@ -130,7 +160,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _typeOrDurationController.clear();
     _requirementsController.clear();
     _descriptionController.clear();
-    setState(() => _selectedImage = null);
+    setState(() {
+      _selectedImage = null;
+      _selectedThumbnailImage = null;
+    });
   }
 
   @override
@@ -218,9 +251,68 @@ class _AdminDashboardState extends State<AdminDashboard> {
             _buildField(_titleController, "Title"),
             if (_isVideoCategory) ...[
               _buildField(_companyOrUniController, "Author Name"),
-              _buildField(_typeOrDurationController, "Duration"),
-              _buildField(_imageUrlController, "YouTube Video ID"),
+              _buildField(_typeOrDurationController, "Duration (Optional)", isRequired: false),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: TextFormField(
+                  controller: _imageUrlController,
+                  onChanged: (value) {
+                    if (value.contains('youtube') || value.contains('youtu.be')) {
+                      final videoId = _extractVideoIdFromUrl(value);
+                      if (videoId.isNotEmpty) {
+                        _imageUrlController.text = videoId;
+                        _imageUrlController.selection = TextSelection.fromPosition(
+                          TextPosition(offset: videoId.length),
+                        );
+                      }
+                    }
+                    setState(() {});
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "YouTube URL or Video ID",
+                    labelStyle: const TextStyle(color: Colors.white38),
+                    helperText: "Paste URL (e.g., https://youtu.be/xxx) or enter Video ID",
+                    helperStyle: const TextStyle(color: Colors.white30, fontSize: 12),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return "Required";
+                    return null;
+                  },
+                ),
+              ),
               _buildField(_thumbnailUrlController, "Thumbnail URL (Optional)", isRequired: false),
+              const SizedBox(height: 10),
+              const Text("Or Select Thumbnail Image", style: TextStyle(color: Colors.white70, fontSize: 14)),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _pickThumbnailImage,
+                child: Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: _selectedThumbnailImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.file(_selectedThumbnailImage!, fit: BoxFit.cover),
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary, size: 40),
+                            SizedBox(height: 10),
+                            Text("Select Thumbnail Image", style: TextStyle(color: Colors.white54)),
+                          ],
+                        ),
+                ),
+              ),
               const SizedBox(height: 10),
               _buildVideoThumbnailPreview(),
             ] else ...[
@@ -296,25 +388,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
-          child: thumbnailUrl.isEmpty
-              ? const Center(
-                  child: Text(
-                    "Enter a YouTube Video ID to preview the thumbnail",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54),
-                  ),
-                )
-              : ClipRRect(
+          child: _selectedThumbnailImage != null
+              ? ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: Image.network(
-                    thumbnailUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) => const Center(
-                      child: Icon(Icons.broken_image_outlined, color: Colors.white38, size: 36),
-                    ),
-                  ),
-                ),
+                  child: Image.file(_selectedThumbnailImage!, fit: BoxFit.cover, width: double.infinity),
+                )
+              : (thumbnailUrl.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "Enter a YouTube Video ID to preview the thumbnail",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Image.network(
+                        thumbnailUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) => const Center(
+                          child: Icon(Icons.broken_image_outlined, color: Colors.white38, size: 36),
+                        ),
+                      ),
+                    )),
         ),
       ],
     );

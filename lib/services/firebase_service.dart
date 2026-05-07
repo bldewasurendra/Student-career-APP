@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../models/models.dart';
 
@@ -16,6 +17,10 @@ class FirebaseService {
   // Google Sign In
   Future<UserCredential?> signInWithGoogle() async {
     try {
+      if (kIsWeb) {
+        return await _auth.signInWithPopup(GoogleAuthProvider());
+      }
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
@@ -201,6 +206,16 @@ class FirebaseService {
     final url = await ref.getDownloadURL();
     
     await user.updatePhotoURL(url);
+    return url;
+  }
+
+  // Generic file upload used by admin for content images/thumbnails
+  Future<String> uploadFile(File file, {String folder = 'content_uploads'}) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final ref = FirebaseStorage.instance.ref().child(folder).child(fileName);
+
+    final uploadTask = await ref.putFile(file);
+    final url = await uploadTask.ref.getDownloadURL();
     return url;
   }
 
