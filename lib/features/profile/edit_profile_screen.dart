@@ -80,7 +80,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     backgroundImage: _imageFile != null 
                         ? FileImage(_imageFile!) 
                         : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null) as ImageProvider?,
@@ -153,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: AppColors.surface.withOpacity(0.5), borderRadius: BorderRadius.circular(15)),
+          decoration: BoxDecoration(color: AppColors.surface.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(15)),
           child: Text(value, style: const TextStyle(color: Colors.white38)),
         ),
       ],

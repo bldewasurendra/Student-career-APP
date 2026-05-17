@@ -16,6 +16,7 @@ import 'saved_screen.dart';
 import 'support_chat_screen.dart';
 import 'applied_jobs_screen.dart';
 import 'about_uni_path_screen.dart';
+import 'points_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -94,12 +95,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .doc(user.uid)
           .set({'photoURL': url}, SetOptions(merge: true));
 
+      if (!mounted) return;
       // Refresh the UI
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Profile picture updated!")),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to upload image: $e")),
       );
@@ -155,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
               child: Column(
                 children: [
@@ -166,7 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                           backgroundImage: user?.photoURL != null
                               ? NetworkImage(user!.photoURL!)
                               : null,
@@ -258,7 +261,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
                 const SizedBox(width: 15),
-                _buildStatCard("Points", "250", Icons.star_outline),
+                _buildStatCard(
+                  "Points", 
+                  "250", 
+                  Icons.star_outline,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PointsScreen(),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
 
@@ -369,7 +384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           child: Column(
             children: [
@@ -470,7 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (color ?? AppColors.primary).withOpacity(0.1),
+                color: (color ?? AppColors.primary).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color ?? AppColors.primary, size: 22),

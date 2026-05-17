@@ -35,7 +35,7 @@ class _MainNavigationState extends State<MainNavigation> {
           borderRadius: BorderRadius.circular(30),
           child: NavigationBarTheme(
             data: NavigationBarThemeData(
-              indicatorColor: AppColors.primary.withOpacity(0.1),
+              indicatorColor: AppColors.primary.withValues(alpha: 0.1),
               labelTextStyle: WidgetStateProperty.all(
                 const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),

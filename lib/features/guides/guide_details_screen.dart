@@ -25,7 +25,7 @@ class GuideDetailsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -50,7 +50,7 @@ class GuideDetailsScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 height: 1.6,
-                color: AppColors.textPrimary.withOpacity(0.8),
+                color: AppColors.textPrimary.withValues(alpha: 0.8),
               ),
             ),
           ],

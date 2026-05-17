@@ -15,22 +15,23 @@ class AppTheme {
         surface: AppColors.surface,
         error: AppColors.error,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 32,
-        ),
-        titleLarge: GoogleFonts.outfit(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-        bodyMedium: GoogleFonts.outfit(
-          color: AppColors.textSecondary,
-          fontSize: 16,
-        ),
-      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme)
+          .copyWith(
+            displayLarge: GoogleFonts.outfit(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+            ),
+            titleLarge: GoogleFonts.outfit(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
+            bodyMedium: GoogleFonts.outfit(
+              color: AppColors.textSecondary,
+              fontSize: 16,
+            ),
+          ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
@@ -78,22 +79,23 @@ class AppTheme {
         surface: Colors.white,
         error: AppColors.error,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(
-          color: const Color(0xFF1A1A1A),
-          fontWeight: FontWeight.bold,
-          fontSize: 32,
-        ),
-        titleLarge: GoogleFonts.outfit(
-          color: const Color(0xFF1A1A1A),
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-        bodyMedium: GoogleFonts.outfit(
-          color: const Color(0xFF4A4A4A),
-          fontSize: 16,
-        ),
-      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme)
+          .copyWith(
+            displayLarge: GoogleFonts.outfit(
+              color: const Color(0xFF1A1A1A),
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+            ),
+            titleLarge: GoogleFonts.outfit(
+              color: const Color(0xFF1A1A1A),
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
+            bodyMedium: GoogleFonts.outfit(
+              color: const Color(0xFF4A4A4A),
+              fontSize: 16,
+            ),
+          ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,

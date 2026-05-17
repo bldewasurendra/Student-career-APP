@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_colors.dart';
+import '../../models/models.dart';
 import '../../services/firebase_service.dart';
+import '../jobs/job_details_screen.dart';
 
 class AppliedJobsScreen extends StatelessWidget {
   const AppliedJobsScreen({super.key});
@@ -76,6 +78,21 @@ class AppliedJobsScreen extends StatelessWidget {
                     ],
                   ),
                   trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(
+                      job: JobModel(
+                        id: doc.id,
+                        title: data['title'] ?? '',
+                        company: data['company'] ?? '',
+                        location: data['location'] ?? '',
+                        salary: data['salary'] ?? '',
+                        logoUrl: data['logoUrl'] ?? '',
+                        type: data['type'] ?? '',
+                        postedDate: 'Recently',
+                        description: data['description'] ?? '',
+                      ),
+                    )));
+                  },
                 ),
               );
             },

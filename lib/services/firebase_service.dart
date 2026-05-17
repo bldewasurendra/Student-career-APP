@@ -209,14 +209,18 @@ class FirebaseService {
     return url;
   }
 
-  // Generic file upload used by admin for content images/thumbnails
   Future<String> uploadFile(File file, {String folder = 'content_uploads'}) async {
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final ref = FirebaseStorage.instance.ref().child(folder).child(fileName);
+    try {
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = FirebaseStorage.instance.ref().child(folder).child(fileName);
 
-    final uploadTask = await ref.putFile(file);
-    final url = await uploadTask.ref.getDownloadURL();
-    return url;
+      final uploadTask = await ref.putFile(file);
+      final url = await uploadTask.ref.getDownloadURL();
+      return url;
+    } catch (e) {
+      print("Upload Error: $e");
+      throw Exception("Storage Error. Please enable Firebase Storage in Firebase Console.");
+    }
   }
 
   // --- Search Functionality ---

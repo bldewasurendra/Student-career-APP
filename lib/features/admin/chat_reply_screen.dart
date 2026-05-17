@@ -165,7 +165,7 @@ class _ChatReplyScreenState extends State<ChatReplyScreen> {
                 hintText: "Type reply...",
                 hintStyle: const TextStyle(color: Colors.white24),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
+                fillColor: Colors.white.withValues(alpha: 0.05),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
               ),
             ),

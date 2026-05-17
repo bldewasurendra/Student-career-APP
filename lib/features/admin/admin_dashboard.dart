@@ -8,6 +8,10 @@ import '../../services/firebase_service.dart';
 import 'chat_reply_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../jobs/job_details_screen.dart';
+import '../internships/internship_details_screen.dart';
+import '../study_abroad/program_details_screen.dart';
+import '../masters/master_details_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -296,7 +300,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: _selectedThumbnailImage != null
                       ? ClipRRect(
@@ -331,7 +335,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: _selectedImage != null
                       ? ClipRRect(
@@ -386,7 +390,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: _selectedThumbnailImage != null
               ? ClipRRect(
@@ -467,6 +471,57 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ),
                         ],
                       ),
+                      onTap: () {
+                        if (categoryKey == 'jobs') {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => JobDetailsScreen(job: JobModel(
+                            id: doc.id,
+                            title: data['title'] ?? '',
+                            company: data['company'] ?? '',
+                            location: data['location'] ?? '',
+                            salary: data['salary'] ?? '',
+                            logoUrl: data['logoUrl'] ?? '',
+                            type: data['type'] ?? '',
+                            postedDate: 'Recently',
+                            description: data['description'] ?? '',
+                          ))));
+                        } else if (categoryKey == 'internships') {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => InternshipDetailsScreen(internship: JobModel(
+                            id: doc.id,
+                            title: data['title'] ?? '',
+                            company: data['company'] ?? '',
+                            location: data['location'] ?? '',
+                            salary: data['salary'] ?? '',
+                            logoUrl: data['logoUrl'] ?? '',
+                            type: data['type'] ?? '',
+                            postedDate: 'Recently',
+                            description: data['description'] ?? '',
+                          ))));
+                        } else if (categoryKey == 'masters') {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => MasterDetailsScreen(program: ProgramModel(
+                            id: doc.id,
+                            title: data['title'] ?? '',
+                            university: data['university'] ?? '',
+                            country: data['country'] ?? '',
+                            imageUrl: data['imageUrl'] ?? '',
+                            duration: data['duration'] ?? '',
+                            cost: data['cost'] ?? '',
+                            requirements: data['requirements'] ?? '',
+                            description: data['description'] ?? '',
+                          ))));
+                        } else if (categoryKey == 'study_abroad') {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => ProgramDetailsScreen(program: ProgramModel(
+                            id: doc.id,
+                            title: data['title'] ?? '',
+                            university: data['university'] ?? '',
+                            country: data['country'] ?? '',
+                            imageUrl: data['imageUrl'] ?? '',
+                            duration: data['duration'] ?? '',
+                            cost: data['cost'] ?? '',
+                            requirements: data['requirements'] ?? '',
+                            description: data['description'] ?? '',
+                          ))));
+                        }
+                      },
                     ),
                   );
                 },
